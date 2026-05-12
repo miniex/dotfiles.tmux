@@ -120,12 +120,16 @@ else
 fi
 
 # In-place run from inside a clone → skip clone/backup.
-SCRIPT_DIR=$(cd "$(dirname "$0")" 2>/dev/null && pwd || printf '')
+# Only trust IN_PLACE when $0 is a real file (rules out `sh -c` / `curl | sh`,
+# where $0 is just `sh` and dirname resolves to CWD).
 IN_PLACE=0
-if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/tmux.conf" ] && [ -d "$SCRIPT_DIR/os" ]; then
-    IN_PLACE=1
-    TMUX_CONFIG="$SCRIPT_DIR"
-    info "running in-place inside $TMUX_CONFIG"
+if [ -f "$0" ]; then
+    SCRIPT_DIR=$(cd "$(dirname "$0")" 2>/dev/null && pwd || printf '')
+    if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/tmux.conf" ] && [ -d "$SCRIPT_DIR/os" ]; then
+        IN_PLACE=1
+        TMUX_CONFIG="$SCRIPT_DIR"
+        info "running in-place inside $TMUX_CONFIG"
+    fi
 fi
 
 # Returns 0 if $TMUX_CONFIG is a clone of $REPO_URL.
