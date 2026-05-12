@@ -9,7 +9,7 @@ Minimal tmux config in the damin two-color palette (`#98ABCC` blue / `#E890B0` p
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/miniex/dotfiles.tmux/main/install.sh)"
 ```
 
-The installer clones to `~/.config/tmux`, backs up any existing config (including the legacy `~/.tmux.conf`), auto-detects your OS, writes `os.conf`, and offers to reload a running tmux server.
+The installer clones to `~/.config/tmux`, auto-detects your OS, writes `os.conf`, and offers to reload a running tmux server. Re-running updates the existing clone in place with `git pull`; if a different config is found it's moved to `~/.config/tmux.backup.<timestamp>` (the legacy `~/.tmux.conf` is handled the same way).
 
 **Manual:**
 ```bash

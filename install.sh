@@ -128,35 +128,64 @@ if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/tmux.conf" ] && [ -d "$SCRIPT_DIR/o
     info "running in-place inside $TMUX_CONFIG"
 fi
 
+# Returns 0 if $TMUX_CONFIG is a clone of $REPO_URL.
+is_same_repo() {
+    [ -d "$TMUX_CONFIG/.git" ] || return 1
+    existing=$(git -C "$TMUX_CONFIG" remote get-url origin 2>/dev/null || printf '')
+    [ -n "$existing" ] || return 1
+    # Tolerate trailing .git / https-vs-ssh by stripping noise.
+    normalize() { printf '%s' "$1" | sed -e 's#\.git$##' -e 's#^git@github.com:#https://github.com/#'; }
+    [ "$(normalize "$existing")" = "$(normalize "$REPO_URL")" ]
+}
+
 if [ "$IN_PLACE" -eq 0 ]; then
-    step "Backup existing"
-    if [ -e "$TMUX_CONFIG" ]; then
-        bk=$(backup_path "$TMUX_CONFIG")
-        if prompt_yes "Move $TMUX_CONFIG → $bk?"; then
-            mv "$TMUX_CONFIG" "$bk"
-            ok "config moved to $bk"
+    if [ -e "$TMUX_CONFIG" ] && is_same_repo; then
+        step "Update existing clone"
+        info "$TMUX_CONFIG already tracks $REPO_URL — pulling latest"
+        if git -C "$TMUX_CONFIG" pull --ff-only; then
+            ok "updated $TMUX_CONFIG"
         else
-            err "aborted — config already exists at $TMUX_CONFIG"
-            exit 1
+            warn "git pull failed — falling back to backup + fresh clone"
+            bk=$(backup_path "$TMUX_CONFIG")
+            mv "$TMUX_CONFIG" "$bk"
+            ok "moved conflicting clone to $bk"
+            git clone --depth 1 "$REPO_URL" "$TMUX_CONFIG"
+            ok "cloned to $TMUX_CONFIG"
         fi
     else
-        info "no existing $TMUX_CONFIG"
-    fi
-
-    # ~/.tmux.conf shadows ~/.config/tmux/tmux.conf on tmux ≥ 3.1.
-    if [ -e "$LEGACY_TMUX_CONF" ]; then
-        bk=$(backup_path "$LEGACY_TMUX_CONF")
-        if prompt_yes "Move legacy $LEGACY_TMUX_CONF → $bk? (it shadows the new config)"; then
-            mv "$LEGACY_TMUX_CONF" "$bk"
-            ok "legacy config moved to $bk"
+        step "Backup existing"
+        if [ -e "$TMUX_CONFIG" ]; then
+            bk=$(backup_path "$TMUX_CONFIG")
+            # Non-interactive (no /dev/tty): back up silently instead of aborting.
+            if [ ! -r /dev/tty ]; then
+                mv "$TMUX_CONFIG" "$bk"
+                ok "non-interactive — moved existing config to $bk"
+            elif prompt_yes "Move $TMUX_CONFIG → $bk?"; then
+                mv "$TMUX_CONFIG" "$bk"
+                ok "config moved to $bk"
+            else
+                err "aborted — config already exists at $TMUX_CONFIG"
+                exit 1
+            fi
         else
-            warn "kept $LEGACY_TMUX_CONF — tmux will prefer it over the new config"
+            info "no existing $TMUX_CONFIG"
         fi
-    fi
 
-    step "Clone repository"
-    git clone --depth 1 "$REPO_URL" "$TMUX_CONFIG"
-    ok "cloned to $TMUX_CONFIG"
+        # ~/.tmux.conf shadows ~/.config/tmux/tmux.conf on tmux ≥ 3.1.
+        if [ -e "$LEGACY_TMUX_CONF" ]; then
+            bk=$(backup_path "$LEGACY_TMUX_CONF")
+            if [ -r /dev/tty ] && prompt_yes "Move legacy $LEGACY_TMUX_CONF → $bk? (it shadows the new config)"; then
+                mv "$LEGACY_TMUX_CONF" "$bk"
+                ok "legacy config moved to $bk"
+            else
+                warn "kept $LEGACY_TMUX_CONF — tmux will prefer it over the new config"
+            fi
+        fi
+
+        step "Clone repository"
+        git clone --depth 1 "$REPO_URL" "$TMUX_CONFIG"
+        ok "cloned to $TMUX_CONFIG"
+    fi
 fi
 
 # Tarball / manual copy strips +x.
