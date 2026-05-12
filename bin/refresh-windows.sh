@@ -40,4 +40,4 @@ build_color_expr() {
 color=$(build_color_expr "$count")
 
 tmux set-option -gw window-status-format "#[fg=${color},nobold] #I:#W "
-tmux set-option -gw window-status-current-format "#[fg=${color},bold]✿ #I:#W "
+tmux set-option -gw window-status-current-format "#[fg=${color},bold] ✿ #I:#W ♡ "

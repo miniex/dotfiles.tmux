@@ -116,7 +116,7 @@ if command -v tmux >/dev/null 2>&1; then
     tmux_version=$(tmux -V | awk '{print $2}')
     ok "tmux $tmux_version"
 else
-    warn "tmux not installed — install tmux ≥ 3.2 before launching"
+    warn "tmux not installed — install tmux ≥ 3.3 before launching"
 fi
 
 # In-place run from inside a clone → skip clone/backup.

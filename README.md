@@ -17,13 +17,14 @@ git clone https://github.com/miniex/dotfiles.tmux.git ~/.config/tmux
 sh ~/.config/tmux/install.sh   # picks the OS profile
 ```
 
-Requires **tmux ≥ 3.2**. On Linux, install `xclip` (X11) or `wl-clipboard` (Wayland) for the yank bindings.
+Requires **tmux ≥ 3.3** (for `menu-selected-style` and `copy-mode-current-match-style`). On Linux, install `xclip` (X11) or `wl-clipboard` (Wayland) for the yank bindings.
 
 ## Highlights
 
 - **Live window-list gradient** — `bin/refresh-windows.sh` rewrites `window-status-format` on every window create / kill / rename / attach, interpolating between `#98ABCC` and `#E890B0` across the live window count.
-- **Florette / heart glyphs** — `✿` (active window, prefix indicator) and `❥` (clock anchor). Pure dingbats, no Nerd Font required.
+- **Dingbat-only glyphs** — `✿` active window + prefix flag, `♡` active window trail, `❥` clock, `✧` / `⋆` sparkle bookends, `⌬` zoom, `✎` copy-mode. Pure dingbats, no Nerd Font required.
 - **Prefix indicator** — left `✿` flips blue → pink while `Ctrl-a` is held.
+- **Themed widgets** — popup / menu borders, copy-mode match highlight, and `prefix-q` pane numbers all use the same blue/pink palette.
 - **OS profiles** — `os/linux.conf` (xclip / wl-copy) and `os/macos.conf` (pbcopy / pbpaste), selected by `install.sh`.
 - **Sane defaults** — Ctrl-a prefix, vi mode, mouse, 24-bit color, 50k history, base-index 1, renumber windows, splits inherit cwd.
 
