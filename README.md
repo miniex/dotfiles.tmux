@@ -42,6 +42,13 @@ Requires **tmux ≥ 3.3** (for `menu-selected-style` and `copy-mode-current-matc
 | `y`                         | Yank to system clipboard (per OS)          |
 | `prefix P`                  | Paste from system clipboard                |
 
+## Companion repos
+
+- [btop-theme-damin](https://github.com/miniex/btop-theme-damin) — btop theme
+- [fish-theme-damin](https://github.com/miniex/fish-theme-damin) — fish prompt
+- [dotfiles.kitty](https://github.com/miniex/dotfiles.kitty) — kitty terminal config
+- [dotfiles.nvim](https://github.com/miniex/dotfiles.nvim) — Neovim config
+
 ## Contributing
 
 Personal dotfiles — outside contributions are not accepted. Fork instead. Bug reports for the published behavior are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
