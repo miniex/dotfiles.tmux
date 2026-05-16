@@ -30,6 +30,8 @@ Requires **tmux ≥ 3.3** (for `menu-selected-style` and `copy-mode-current-matc
 
 ## Key Bindings
 
+Prefix is **`Ctrl-a`** (rebound from the default `Ctrl-b`). `prefix r` below means *press `Ctrl-a`, release, then `r`*.
+
 | Key                         | Description                                |
 |-----------------------------|--------------------------------------------|
 | `prefix r`                  | Reload `tmux.conf`                         |
