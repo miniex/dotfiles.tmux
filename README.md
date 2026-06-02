@@ -5,19 +5,21 @@ Minimal tmux config in the damin two-color palette (`#98ABCC` blue / `#E890B0` p
 ## Installation
 
 **One-liner:**
+
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/miniex/dotfiles.tmux/main/install.sh)"
 ```
 
-The installer clones to `~/.config/tmux`, auto-detects your OS, writes `os.conf`, and offers to reload a running tmux server. Re-running updates the existing clone in place with `git pull`; if a different config is found it's moved to `~/.config/tmux.backup.<timestamp>` (the legacy `~/.tmux.conf` is handled the same way).
+The installer clones to `~/.config/tmux`, auto-detects your OS, writes `os.conf`, installs a modern `tmux-256color` terminfo entry when the system's is too old for bracketed paste, and offers to reload a running tmux server. Re-running updates the existing clone in place with `git pull`; if a different config is found it's moved to `~/.config/tmux.backup.<timestamp>` (the legacy `~/.tmux.conf` is handled the same way).
 
 **Manual:**
+
 ```bash
 git clone https://github.com/miniex/dotfiles.tmux.git ~/.config/tmux
 sh ~/.config/tmux/install.sh   # picks the OS profile
 ```
 
-Requires **tmux ≥ 3.3** (for `menu-selected-style` and `copy-mode-current-match-style`). On Linux, install `xclip` (X11) or `wl-clipboard` (Wayland) for the yank bindings.
+Requires **tmux ≥ 3.3** (for `menu-selected-style` and `copy-mode-current-match-style`). On Linux, install `xclip` (X11) or `wl-clipboard` (Wayland) for the yank bindings. On macOS, install Homebrew's `ncurses` (`brew install ncurses`) so the installer can source a modern `tmux-256color`; without it that step is skipped with a warning.
 
 ## Highlights
 
@@ -26,23 +28,24 @@ Requires **tmux ≥ 3.3** (for `menu-selected-style` and `copy-mode-current-matc
 - **Prefix indicator** — left `✿` flips blue → pink while `Ctrl-a` is held.
 - **Themed widgets** — popup / menu borders, copy-mode match highlight, and `prefix-q` pane numbers all use the same blue/pink palette.
 - **OS profiles** — `os/linux.conf` (xclip / wl-copy) and `os/macos.conf` (pbcopy / pbpaste), selected by `install.sh`.
+- **Bracketed-paste fix** — where the system `tmux-256color` predates bracketed paste (notably macOS), the installer drops a modern entry into `~/.terminfo` so pastes stop leaking literal `[200~` / `[201~` markers into vim, psql, and friends.
 - **Sane defaults** — Ctrl-a prefix, vi mode, mouse, 24-bit color, 50k history, base-index 1, renumber windows, splits inherit cwd.
 
 ## Key Bindings
 
-Prefix is **`Ctrl-a`** (rebound from the default `Ctrl-b`). `prefix r` below means *press `Ctrl-a`, release, then `r`*.
+Prefix is **`Ctrl-a`** (rebound from the default `Ctrl-b`). `prefix r` below means _press `Ctrl-a`, release, then `r`_.
 
-| Key                         | Description                                |
-|-----------------------------|--------------------------------------------|
-| `prefix r`                  | Reload `tmux.conf`                         |
-| `prefix \|` / `prefix -`    | Split horizontal / vertical (inherits cwd) |
-| `prefix h/j/k/l`            | Select pane                                |
-| `prefix H/J/K/L`            | Resize pane (repeatable)                   |
-| `prefix >` / `prefix <`     | Swap window forward / backward             |
-| `prefix Enter`              | Enter copy-mode                            |
-| `v` / `V` / `C-v`           | Begin / line / block selection             |
-| `y`                         | Yank to system clipboard (per OS)          |
-| `prefix P`                  | Paste from system clipboard                |
+| Key                      | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `prefix r`               | Reload `tmux.conf`                         |
+| `prefix \|` / `prefix -` | Split horizontal / vertical (inherits cwd) |
+| `prefix h/j/k/l`         | Select pane                                |
+| `prefix H/J/K/L`         | Resize pane (repeatable)                   |
+| `prefix >` / `prefix <`  | Swap window forward / backward             |
+| `prefix Enter`           | Enter copy-mode                            |
+| `v` / `V` / `C-v`        | Begin / line / block selection             |
+| `y`                      | Yank to system clipboard (per OS)          |
+| `prefix P`               | Paste from system clipboard                |
 
 ## Companion repos
 

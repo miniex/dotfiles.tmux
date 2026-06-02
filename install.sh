@@ -103,6 +103,44 @@ write_os_conf() {
     ok "os.conf → source os/$2.conf"
 }
 
+# macOS's system ncurses (2015) ships tmux-256color without bracketed paste
+# (BE/BD), so pastes leak raw [200~/[201~ markers into vim, psql, etc. under
+# tmux. Install a modern entry into ~/.terminfo (searched before the system db).
+# Capability-detected, not OS-branched — a no-op on modern Linux.
+install_terminfo() {
+    if infocmp -x tmux-256color 2>/dev/null | grep -q 'BE='; then
+        ok "tmux-256color already supports bracketed paste"
+        return 0
+    fi
+
+    # System infocmp may be too old to be the source; prefer Homebrew's ncurses.
+    src=''
+    for ic in \
+        /opt/homebrew/opt/ncurses/bin/infocmp \
+        /usr/local/opt/ncurses/bin/infocmp \
+        infocmp; do
+        if command -v "$ic" >/dev/null 2>&1 \
+            && "$ic" -x tmux-256color 2>/dev/null | grep -q 'BE='; then
+            src=$ic
+            break
+        fi
+    done
+
+    if [ -z "$src" ]; then
+        warn "no terminfo source with bracketed paste found — paste inside tmux"
+        warn "may show literal [200~ markers; fix with: brew install ncurses, then rerun"
+        return 0
+    fi
+
+    # Compile with the SYSTEM tic, not Homebrew's: vim/nvim link against the
+    # platform's older ncurses, which can't read the format newer tic emits.
+    if "$src" -x tmux-256color 2>/dev/null | tic -x -o "$HOME/.terminfo" - 2>/dev/null; then
+        ok "installed modern tmux-256color → ~/.terminfo (fixes paste markers)"
+    else
+        warn "failed to compile tmux-256color into ~/.terminfo"
+    fi
+}
+
 banner
 
 step "Pre-flight checks"
@@ -207,6 +245,9 @@ else
     info "non-interactive — using detected ($choice)"
 fi
 write_os_conf "$TMUX_CONFIG" "$choice"
+
+step "Terminal database"
+install_terminfo
 
 if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
     step "Reload running tmux"
