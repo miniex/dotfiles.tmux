@@ -18,5 +18,10 @@ if [ -n "$missing" ]; then
     exit 1
 fi
 
-shfmt -d -i 4 -ci -bn -s install.sh tools/format.sh tools/lint.sh bin/refresh-windows.sh
-shellcheck install.sh tools/format.sh tools/lint.sh bin/refresh-windows.sh
+scripts="install.sh tools/format.sh tools/lint.sh"
+scripts="$scripts bin/refresh-windows.sh bin/theme.sh bin/update.sh"
+
+# shellcheck disable=SC2086  # deliberate word splitting over the script list
+shfmt -d -i 4 -ci -bn -s $scripts
+# shellcheck disable=SC2086
+shellcheck $scripts

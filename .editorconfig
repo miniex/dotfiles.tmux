@@ -18,6 +18,6 @@ shell_variant = posix
 binary_next_line = true
 switch_case_indent = true
 
-[{tmux.conf,os/*.conf}]
+[{tmux.conf,os/*.conf,themes/*.conf}]
 indent_style = space
 indent_size = 4

@@ -7,6 +7,7 @@ set -eu
 REPO_URL="https://github.com/miniex/dotfiles.tmux.git"
 TMUX_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/tmux"
 LEGACY_TMUX_CONF="$HOME/.tmux.conf"
+DEFAULT_THEME="damin"
 
 if [ -t 1 ]; then
     RESET=$(printf '\033[0m')
@@ -83,6 +84,67 @@ prompt_choice() {
     esac
 }
 
+# $1=config dir → theme names, default first (matches bin/theme.sh ordering).
+list_themes() {
+    if [ -f "$1/themes/$DEFAULT_THEME.conf" ]; then
+        printf '%s\n' "$DEFAULT_THEME"
+    fi
+    for f in "$1"/themes/*.conf; do
+        [ -f "$f" ] || continue
+        name=${f##*/}
+        name=${name%.conf}
+        if [ "$name" != "$DEFAULT_THEME" ]; then
+            printf '%s\n' "$name"
+        fi
+    done
+}
+
+# $1=config dir, $2=default → echoes chosen theme name
+prompt_theme() {
+    themes=$(list_themes "$1")
+    default=$2
+    i=1
+    for t in $themes; do
+        if [ "$t" = "$default" ]; then
+            printf '       %s✿%s %s%d%s) %s\n' "$PINK" "$RESET" "$DIM" "$i" "$RESET" "$t" >&2
+        else
+            printf '         %s%d%s) %s\n' "$DIM" "$i" "$RESET" "$t" >&2
+        fi
+        i=$((i + 1))
+    done
+    printf '  %s?%s  Which theme? %s[name or number, default: %s]%s ' \
+        "$PINK" "$RESET" "$DIM" "$default" "$RESET" >&2
+    read_answer
+
+    case $answer in
+        '')
+            printf '%s' "$default"
+            return
+            ;;
+        *[!0-9]*) ;; # not a number — fall through to the name match
+        *)
+            i=1
+            for t in $themes; do
+                if [ "$i" -eq "$answer" ]; then
+                    printf '%s' "$t"
+                    return
+                fi
+                i=$((i + 1))
+            done
+            printf '%s' "$default"
+            return
+            ;;
+    esac
+
+    for t in $themes; do
+        if [ "$t" = "$answer" ]; then
+            printf '%s' "$t"
+            return
+        fi
+    done
+    printf '%s' "$default"
+}
+
 backup_path() { printf '%s.backup.%s' "$1" "$(date +%Y%m%d-%H%M%S)"; }
 
 detect_os() {
@@ -101,6 +163,23 @@ write_os_conf() {
     fi
     printf 'source-file %s/os/%s.conf\n' "$1" "$2" >"$1/os.conf"
     ok "os.conf → source os/$2.conf"
+}
+
+write_theme_conf() {
+    target="$1/themes/$2.conf"
+    if [ ! -f "$target" ]; then
+        err "missing $target — repo layout looks wrong"
+        exit 1
+    fi
+    printf 'source-file %s/themes/%s.conf\n' "$1" "$2" >"$1/theme.conf"
+    ok "theme.conf → source themes/$2.conf"
+}
+
+# Theme recorded in an existing theme.conf, so re-runs default to it.
+read_theme_conf() {
+    if [ -f "$1/theme.conf" ]; then
+        sed -n 's|^source-file .*/themes/\(.*\)\.conf$|\1|p' "$1/theme.conf" | head -n1
+    fi
 }
 
 # macOS's system ncurses (2015) ships tmux-256color without bracketed paste
@@ -231,9 +310,11 @@ if [ "$IN_PLACE" -eq 0 ]; then
 fi
 
 # Tarball / manual copy strips +x.
-if [ -f "$TMUX_CONFIG/bin/refresh-windows.sh" ]; then
-    chmod +x "$TMUX_CONFIG/bin/refresh-windows.sh"
-fi
+for script in "$TMUX_CONFIG"/bin/*.sh; do
+    if [ -f "$script" ]; then
+        chmod +x "$script"
+    fi
+done
 
 step "OS selection"
 detected=$(detect_os)
@@ -245,6 +326,20 @@ else
     info "non-interactive — using detected ($choice)"
 fi
 write_os_conf "$TMUX_CONFIG" "$choice"
+
+step "Theme selection"
+theme_default=$(read_theme_conf "$TMUX_CONFIG")
+if [ -z "$theme_default" ] || [ ! -f "$TMUX_CONFIG/themes/$theme_default.conf" ]; then
+    theme_default=$DEFAULT_THEME
+fi
+if [ -r /dev/tty ]; then
+    theme=$(prompt_theme "$TMUX_CONFIG" "$theme_default")
+else
+    theme=$theme_default
+    info "non-interactive — using $theme"
+fi
+write_theme_conf "$TMUX_CONFIG" "$theme"
+info "switch anytime with prefix T, or: sh $TMUX_CONFIG/bin/theme.sh set <name>"
 
 step "Terminal database"
 install_terminfo
@@ -267,7 +362,9 @@ ok "miniex/dotfiles.tmux installed at $TMUX_CONFIG"
 printf '\n  %sNext:%s\n' "$BOLD" "$RESET"
 printf '    %s•%s launch %s%stmux%s — prefix is %s%sCtrl-a%s\n' \
     "$PINK" "$RESET" "$SKY" "$BOLD" "$RESET" "$SKY" "$BOLD" "$RESET"
+printf '    %s•%s %s%sprefix T%s picks a theme · %s%sprefix U%s updates and reloads\n' \
+    "$PINK" "$RESET" "$SKY" "$BOLD" "$RESET" "$SKY" "$BOLD" "$RESET"
 printf '    %s•%s pair with %s%sminiex/dotfiles.kitty%s + %s%sfish-theme-damin%s for the matched palette\n' \
     "$PINK" "$RESET" "$SKY" "$BOLD" "$RESET" "$SKY" "$BOLD" "$RESET"
-printf '    %s•%s rerun %s%ssh %s/install.sh%s to switch OS profile\n\n' \
+printf '    %s•%s rerun %s%ssh %s/install.sh%s to switch OS profile or theme\n\n' \
     "$PINK" "$RESET" "$SKY" "$BOLD" "$TMUX_CONFIG" "$RESET"
